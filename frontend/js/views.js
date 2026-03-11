@@ -1,7 +1,3 @@
-/* ============================================
-   views.js — Vistas conectadas al backend real
-   ============================================ */
-
 const Views = (() => {
 
   // ══════════════════════════════════════════
@@ -421,9 +417,9 @@ const Views = (() => {
     const selMad = buildSearchSelect('sacMadrina', reg.madrina_id||'', reg.madrina_nombres ? reg.madrina_nombres+' '+reg.madrina_apellidos : '', 'Buscar madrina...', feligresId);
     const selCon = buildSearchSelect('sacConyuge', reg.conyuge_id||'', reg.conyuge_nombres ? reg.conyuge_nombres+' '+reg.conyuge_apellidos : '', 'Buscar cónyuge...', feligresId);
 
-    const docsHtml = `<div id="sacDocsList">${renderDocsList(docs, feligresId, sacKey, sacId, canEdit)}</div>`);
+    const docsHtml = `<div id="sacDocsList">${renderDocsList(docs, feligresId, sacKey, sacId, canEdit)}</div>`;
 
-Modal.open(`
+    Modal.open(`
       <div class="modal-header">
         <div class="modal-title">${info.emoji} ${info.label} — Feligrés</div>
         <button class="modal-close" onclick="Modal.close()">✕</button>
