@@ -1,53 +1,35 @@
-// db/setup.js — Ejecuta el schema SQL automáticamente
-const { Pool } = require('pg');
-const fs = require('fs');
-const path = require('path');
 require('dotenv').config();
+const { Pool } = require('pg');
+const bcrypt = require('bcryptjs');
+
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: { rejectUnauthorized: false }
+});
 
 async function setup() {
-  console.log('🚀 Iniciando configuración de la base de datos...');
-
-  // Primero crear la BD si no existe
-  const adminPool = new Pool({
-    host: process.env.DB_HOST || 'localhost',
-    port: parseInt(process.env.DB_PORT || '5432'),
-    database: 'postgres', // conectar a BD por defecto
-    user: process.env.DB_USER || 'postgres',
-    password: process.env.DB_PASSWORD || '',
-  });
+  console.log('🔧 Iniciando setup...');
 
   try {
-    const dbName = process.env.DB_NAME || 'parroquia_db';
-    const exists = await adminPool.query(
-      `SELECT 1 FROM pg_database WHERE datname = $1`, [dbName]
-    );
-    if (exists.rows.length === 0) {
-      await adminPool.query(`CREATE DATABASE ${dbName} ENCODING 'UTF8'`);
-      console.log(`✅ Base de datos '${dbName}' creada`);
-    } else {
-      console.log(`ℹ️  Base de datos '${dbName}' ya existe`);
-    }
-  } finally {
-    await adminPool.end();
-  }
+    // Generar hash de la contraseña
+    const hash = await bcrypt.hash('parroco123', 10);
+    console.log('🔑 Hash generado:', hash);
 
-  // Ahora ejecutar el schema
-  const pool = new Pool({
-    host: process.env.DB_HOST || 'localhost',
-    port: parseInt(process.env.DB_PORT || '5432'),
-    database: process.env.DB_NAME || 'parroquia_db',
-    user: process.env.DB_USER || 'postgres',
-    password: process.env.DB_PASSWORD || '',
-  });
+    // Insertar o actualizar usuario admin
+    await pool.query(`
+      INSERT INTO usuarios (username, password_hash, nombre, rol, activo)
+      VALUES ($1, $2, $3, $4, $5)
+      ON CONFLICT (username) DO UPDATE
+      SET password_hash = EXCLUDED.password_hash,
+          activo = true
+    `, ['parroco', hash, 'Párroco Administrador', 'parroco', true]);
 
-  try {
-    const sql = fs.readFileSync(path.join(__dirname, 'schema.sql'), 'utf8');
-    await pool.query(sql);
-    console.log('✅ Tablas y datos iniciales creados correctamente');
-    console.log('\n🎉 Base de datos lista. Ejecuta: npm start');
+    console.log('✅ Usuario admin creado/actualizado correctamente');
+    console.log('👤 Usuario: parroco');
+    console.log('🔒 Contraseña: parroco123');
+
   } catch (err) {
-    console.error('❌ Error al ejecutar schema:', err.message);
-    process.exit(1);
+    console.error('❌ Error:', err.message);
   } finally {
     await pool.end();
   }
