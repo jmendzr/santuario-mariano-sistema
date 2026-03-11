@@ -8,12 +8,20 @@ const db      = require('../db');
 const { authMiddleware, requireEdit, requireParroco, audit } = require('../middleware/auth');
 
 // ── SUPABASE CLIENT ───────────────────────────────────────────
+// Inicialización segura: no crashea si faltan variables
 const { createClient } = require('@supabase/supabase-js');
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_KEY
-);
 const BUCKET = process.env.SUPABASE_BUCKET || 'documentos';
+let supabase = null;
+if (process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_KEY) {
+  supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_KEY);
+  console.log('✅ Supabase Storage conectado');
+} else {
+  console.warn('⚠️  SUPABASE_URL o SUPABASE_SERVICE_KEY no configurados — subida de archivos deshabilitada');
+}
+function getSupabase() {
+  if (!supabase) throw new Error('Supabase Storage no configurado. Agregue SUPABASE_URL y SUPABASE_SERVICE_KEY en las variables de entorno.');
+  return supabase;
+}
 
 // ── MULTER CONFIG (memoria, no disco) ────────────────────────
 const upload = multer({
@@ -97,7 +105,7 @@ router.delete('/:id', authMiddleware, requireEdit, async (req, res) => {
   try {
     const docs = await db.query(`SELECT nombre_archivo FROM documentos WHERE sacramento_id = $1`, [req.params.id]);
     for (const d of docs.rows) {
-      await supabase.storage.from(BUCKET).remove([d.nombre_archivo]);
+      await getSupabase().storage.from(BUCKET).remove([d.nombre_archivo]);
     }
     await db.query(`DELETE FROM sacramentos WHERE id = $1`, [req.params.id]);
     res.json({ message: 'Sacramento eliminado' });
@@ -139,7 +147,7 @@ router.post('/documentos/upload', authMiddleware, requireEdit, upload.single('ar
     const nombreArchivo = `${uuidv4()}${ext}`;
 
     // Subir buffer a Supabase Storage
-    const { error: uploadError } = await supabase.storage
+    const { error: uploadError } = await getSupabase().storage
       .from(BUCKET)
       .upload(nombreArchivo, req.file.buffer, {
         contentType: req.file.mimetype,
@@ -152,7 +160,7 @@ router.post('/documentos/upload', authMiddleware, requireEdit, upload.single('ar
     }
 
     // URL pública permanente
-    const { data: urlData } = supabase.storage
+    const { data: urlData } = getSupabase().storage
       .from(BUCKET)
       .getPublicUrl(nombreArchivo);
 
@@ -191,7 +199,7 @@ router.get('/documentos/file/:filename', authMiddleware, async (req, res) => {
       return res.redirect(r.rows[0].ruta_almacen);
     }
 
-    const { data } = supabase.storage.from(BUCKET).getPublicUrl(filename);
+    const { data } = getSupabase().storage.from(BUCKET).getPublicUrl(filename);
     res.redirect(data.publicUrl);
   } catch (err) {
     console.error(err);
@@ -204,7 +212,7 @@ router.delete('/documentos/:id', authMiddleware, requireEdit, async (req, res) =
     const r = await db.query(`SELECT nombre_archivo FROM documentos WHERE id = $1`, [req.params.id]);
     if (!r.rows[0]) return res.status(404).json({ error: 'Documento no encontrado' });
 
-    await supabase.storage.from(BUCKET).remove([r.rows[0].nombre_archivo]);
+    await getSupabase().storage.from(BUCKET).remove([r.rows[0].nombre_archivo]);
     await db.query(`DELETE FROM documentos WHERE id = $1`, [req.params.id]);
     res.json({ message: 'Documento eliminado' });
   } catch (err) {
