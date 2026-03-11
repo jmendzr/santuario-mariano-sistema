@@ -52,15 +52,15 @@ app.use('/api',            require('./routes/sacramentos'));  // sacramentos, do
 
 // ── FRONTEND ESTÁTICO ─────────────────────────
 // Sirve el frontend desde la carpeta /frontend
-const frontendDir = path.join(__dirname, '..', 'frontend');
-if (fs.existsSync(frontendDir)) {
-  app.use(express.static(frontendDir));
-  app.get('*', (req, res) => {
-    if (!req.path.startsWith('/api') && !req.path.startsWith('/uploads')) {
-      res.sendFile(path.join(frontendDir, 'index.html'));
-    }
-  });
-}
+// const frontendDir = path.join(__dirname, '..', 'frontend');
+// if (fs.existsSync(frontendDir)) {
+//   app.use(express.static(frontendDir));
+//   app.get('*', (req, res) => {
+//     if (!req.path.startsWith('/api') && !req.path.startsWith('/uploads')) {
+//       res.sendFile(path.join(frontendDir, 'index.html'));
+//     }
+//   });
+// }
 
 // ── HEALTH CHECK ──────────────────────────────
 app.get('/health', (req, res) => {
