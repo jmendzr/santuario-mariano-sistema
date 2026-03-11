@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Guía de Despliegue — Santuario Mariano</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:#0F1923;color:#E8E0D4;min-height:100vh}
+.hero{background:linear-gradient(135deg,#1C2B4A 0%,#0F1923 100%);padding:48px 40px 32px;text-align:center;border-bottom:3px solid #C4A04A}
+.cross{font-size:40px;color:#C4A04A;margin-bottom:12px}
+.hero h1{font-family:'Cinzel',serif;font-size:24px;color:#fff;line-height:1.3}
+.hero p{color:rgba(196,160,74,.7);font-size:14px;margin-top:8px}
+.container{max-width:1100px;margin:0 auto;padding:40px 24px}
+
+/* DECISION BANNER */
+.decision{background:linear-gradient(135deg,#1C2B4A,#243560);border:2px solid #C4A04A;border-radius:16px;padding:32px;text-align:center;margin-bottom:40px}
+.decision h2{font-family:'Cinzel',serif;font-size:20px;color:#C4A04A;margin-bottom:12px}
+.decision p{color:rgba(232,224,212,.75);font-size:14px;line-height:1.7;max-width:650px;margin:0 auto 20px}
+.rec-badge{display:inline-flex;align-items:center;gap:8px;background:#C4A04A;color:#0F1923;padding:10px 24px;border-radius:30px;font-weight:700;font-size:14px}
+
+/* COMPARE GRID */
+.compare{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:40px}
+.option{border-radius:16px;overflow:hidden;border:2px solid rgba(255,255,255,.08)}
+.option.recommended{border-color:#C4A04A}
+.opt-header{padding:20px 24px;display:flex;align-items:center;gap:14px}
+.opt-header.local{background:linear-gradient(135deg,#1A2535,#243050)}
+.opt-header.railway{background:linear-gradient(135deg,#1A2535,#6B21A8)}
+.opt-icon{font-size:32px}
+.opt-name{font-family:'Cinzel',serif;font-size:17px;color:#fff}
+.opt-tag{font-size:11px;margin-top:2px}
+.opt-tag.free{color:#4ADE80}
+.opt-tag.paid{color:#F59E0B}
+.rec-pill{margin-left:auto;background:#C4A04A;color:#0F1923;font-size:10px;font-weight:700;padding:4px 10px;border-radius:20px;letter-spacing:.5px}
+.opt-body{padding:20px 24px;background:#0F1923}
+.feature-list{list-style:none;display:flex;flex-direction:column;gap:10px;margin-bottom:20px}
+.feature-list li{display:flex;align-items:flex-start;gap:10px;font-size:13px;color:rgba(232,224,212,.85);line-height:1.5}
+.fi{font-size:16px;flex-shrink:0;margin-top:1px}
+.pros-cons{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
+.pc-box{background:rgba(255,255,255,.04);border-radius:8px;padding:12px}
+.pc-title{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px}
+.pc-title.pro{color:#4ADE80}
+.pc-title.con{color:#F87171}
+.pc-item{font-size:12px;color:rgba(232,224,212,.7);margin-bottom:5px;line-height:1.4}
+.cost-box{background:rgba(196,160,74,.1);border:1px solid rgba(196,160,74,.3);border-radius:8px;padding:12px;text-align:center}
+.cost-amount{font-family:'Cinzel',serif;font-size:26px;color:#C4A04A;font-weight:700}
+.cost-label{font-size:11px;color:rgba(196,160,74,.6);margin-top:2px}
+
+/* STEPS */
+.steps-section{margin-bottom:40px}
+.section-title{font-family:'Cinzel',serif;font-size:18px;color:#C4A04A;margin-bottom:20px;display:flex;align-items:center;gap:10px}
+.section-title::after{content:'';flex:1;height:1px;background:rgba(196,160,74,.2)}
+
+.steps-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+.step-card{background:#141F2E;border:1px solid rgba(255,255,255,.08);border-radius:12px;overflow:hidden}
+.step-header{background:linear-gradient(90deg,#1C2B4A,#141F2E);padding:14px 20px;font-family:'Cinzel',serif;font-size:14px;color:#C4A04A;display:flex;align-items:center;gap:8px}
+.step-body{padding:20px}
+.step{display:flex;gap:14px;margin-bottom:16px}
+.step:last-child{margin-bottom:0}
+.step-num{width:28px;height:28px;border-radius:50%;background:#C4A04A;color:#0F1923;font-weight:700;font-size:13px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.step-content{}
+.step-title{font-size:13px;font-weight:600;color:#fff;margin-bottom:4px}
+.step-desc{font-size:12px;color:rgba(232,224,212,.6);line-height:1.6}
+.code{background:#0A1018;border:1px solid rgba(255,255,255,.1);border-radius:6px;padding:8px 12px;font-family:'Courier New',monospace;font-size:12px;color:#86EFAC;margin-top:6px;white-space:pre-wrap;line-height:1.6}
+.code .cmd{color:#93C5FD}
+.code .comment{color:rgba(255,255,255,.3)}
+
+/* COSTS TABLE */
+.costs-section{margin-bottom:40px}
+.cost-table{width:100%;border-collapse:collapse}
+.cost-table th{background:#1C2B4A;color:rgba(196,160,74,.8);font-size:11px;text-transform:uppercase;letter-spacing:.8px;padding:12px 16px;text-align:left;border-bottom:2px solid rgba(196,160,74,.2)}
+.cost-table td{padding:12px 16px;border-bottom:1px solid rgba(255,255,255,.06);font-size:13px;color:rgba(232,224,212,.8)}
+.cost-table tr:hover td{background:rgba(255,255,255,.03)}
+.tag-green{display:inline-block;background:#064E3B;color:#4ADE80;font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px}
+.tag-amber{display:inline-block;background:#451A03;color:#FBBF24;font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px}
+.tag-red{display:inline-block;background:#450A0A;color:#F87171;font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px}
+
+/* RECOMMENDATION BOX */
+.final-rec{background:linear-gradient(135deg,#1C2B4A,#0F1923);border:2px solid #C4A04A;border-radius:16px;padding:32px;text-align:center;margin-bottom:40px}
+.final-rec h3{font-family:'Cinzel',serif;font-size:18px;color:#C4A04A;margin-bottom:16px}
+.scenario{background:rgba(196,160,74,.08);border:1px solid rgba(196,160,74,.2);border-radius:10px;padding:16px;margin-bottom:12px;text-align:left;display:flex;gap:14px}
+.sc-icon{font-size:24px;flex-shrink:0}
+.sc-title{font-size:13px;font-weight:700;color:#fff;margin-bottom:4px}
+.sc-desc{font-size:12px;color:rgba(232,224,212,.65);line-height:1.6}
+.sc-rec{display:inline-block;margin-top:6px;background:#C4A04A;color:#0F1923;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px}
+
+@media(max-width:768px){
+  .compare,.steps-grid,.pros-cons{grid-template-columns:1fr}
+  .hero{padding:32px 20px}
+  .container{padding:24px 16px}
+}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="cross">✝</div>
+  <h1>Santuario Mariano Nuestra Señora del Rosario</h1>
+  <p>Huarmey, Áncash, Perú · Guía de Despliegue del Sistema</p>
+</div>
+
+<div class="container">
+
+  <!-- DECISIÓN PRINCIPAL -->
+  <div class="decision">
+    <h2>¿Base de datos local o en la nube?</h2>
+    <p>Para un santuario en Huarmey con múltiples usuarios que necesitan acceso desde diferentes puntos, la recomendación es clara:</p>
+    <div class="rec-badge">🌐 Recomendado: Railway (nube) — acceso desde cualquier lugar, sin mantenimiento técnico</div>
+  </div>
+
+  <!-- COMPARATIVA -->
+  <div class="section-title">📊 Comparativa de opciones</div>
+  <div class="compare">
+
+    <!-- LOCAL -->
+    <div class="option">
+      <div class="opt-header local">
+        <div class="opt-icon">🖥️</div>
+        <div>
+          <div class="opt-name">Base de datos Local</div>
+          <div class="opt-tag free">Gratis · En su computadora</div>
+        </div>
+      </div>
+      <div class="opt-body">
+        <ul class="feature-list">
+          <li><span class="fi">📦</span> PostgreSQL instalado en una PC del santuario</li>
+          <li><span class="fi">🔒</span> Datos físicamente en sus manos</li>
+          <li><span class="fi">🌐</span> Solo accesible desde esa computadora (sin internet)</li>
+          <li><span class="fi">⚡</span> Muy rápido al ser todo local</li>
+          <li><span class="fi">🔌</span> Si la PC se apaga, el sistema deja de funcionar</li>
+        </ul>
+        <div class="pros-cons">
+          <div class="pc-box">
+            <div class="pc-title pro">✓ Ventajas</div>
+            <div class="pc-item">✓ Totalmente gratuito</div>
+            <div class="pc-item">✓ Sin internet necesario</div>
+            <div class="pc-item">✓ Control total de datos</div>
+            <div class="pc-item">✓ Muy rápido</div>
+          </div>
+          <div class="pc-box">
+            <div class="pc-title con">✗ Desventajas</div>
+            <div class="pc-item">✗ Solo 1 computadora puede acceder</div>
+            <div class="pc-item">✗ Si la PC falla, pierdes todo</div>
+            <div class="pc-item">✗ Sin acceso remoto</div>
+            <div class="pc-item">✗ Requiere mantenimiento</div>
+          </div>
+        </div>
+        <div class="cost-box">
+          <div class="cost-amount">S/ 0</div>
+          <div class="cost-label">por mes — completamente gratis</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RAILWAY -->
+    <div class="option recommended">
+      <div class="opt-header railway">
+        <div class="opt-icon">🚀</div>
+        <div>
+          <div class="opt-name">Railway (Nube)</div>
+          <div class="opt-tag paid">Desde $5 USD/mes · Acceso global</div>
+        </div>
+        <div class="rec-pill">★ RECOMENDADO</div>
+      </div>
+      <div class="opt-body">
+        <ul class="feature-list">
+          <li><span class="fi">🌍</span> Accesible desde cualquier celular, tablet o PC con internet</li>
+          <li><span class="fi">👥</span> El párroco, secretaria y feligreses pueden acceder desde Huarmey o Lima</li>
+          <li><span class="fi">💾</span> Backups automáticos — datos seguros ante cualquier falla</li>
+          <li><span class="fi">🔧</span> Sin instalar nada, Railway se encarga del servidor</li>
+          <li><span class="fi">📱</span> Funciona en celular, tablet, laptop</li>
+        </ul>
+        <div class="pros-cons">
+          <div class="pc-box">
+            <div class="pc-title pro">✓ Ventajas</div>
+            <div class="pc-item">✓ Acceso desde cualquier lugar</div>
+            <div class="pc-item">✓ Múltiples usuarios simultáneos</div>
+            <div class="pc-item">✓ Backups automáticos</div>
+            <div class="pc-item">✓ Fácil de configurar</div>
+          </div>
+          <div class="pc-box">
+            <div class="pc-title con">✗ Desventajas</div>
+            <div class="pc-item">✗ Requiere internet</div>
+            <div class="pc-item">✗ Costo mensual</div>
+            <div class="pc-item">✗ Datos en servidor externo</div>
+          </div>
+        </div>
+        <div class="cost-box">
+          <div class="cost-amount">~$5 USD</div>
+          <div class="cost-label">por mes ≈ S/ 19 soles — incluye todo</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- PASOS: LOCAL -->
+  <div class="steps-section">
+    <div class="section-title">🖥️ Opción A — Instalación Local (paso a paso)</div>
+    <div class="step-card">
+      <div class="step-header">🖥️ Instalar en Windows / Mac / Linux</div>
+      <div class="step-body">
+        <div class="step">
+          <div class="step-num">1</div>
+          <div class="step-content">
+            <div class="step-title">Instalar Node.js 18+</div>
+            <div class="step-desc">Descargar de <strong>nodejs.org</strong> → instalar con opciones por defecto</div>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <div class="step-content">
+            <div class="step-title">Instalar PostgreSQL 14+</div>
+            <div class="step-desc">Descargar de <strong>postgresql.org/download</strong> → instalar. Anotar la contraseña del usuario <code>postgres</code></div>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <div class="step-content">
+            <div class="step-title">Descomprimir el proyecto y configurar</div>
+            <div class="step-desc">Extraer el ZIP del sistema. Dentro de la carpeta <code>backend/</code>:</div>
+            <div class="code"><span class="comment"># Copiar y editar el archivo de configuración</span>
+<span class="cmd">cp .env.example .env</span>
+<span class="comment"># Abrir .env y escribir su contraseña de postgres:</span>
+DB_PASSWORD=su_contraseña_postgres
+RENIEC_TOKEN=su_token_de_apisperu.com</div>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">4</div>
+          <div class="step-content">
+            <div class="step-title">Instalar dependencias y crear la base de datos</div>
+            <div class="code"><span class="cmd">cd backend</span>
+<span class="cmd">npm install</span>
+<span class="cmd">npm run setup-db</span>   <span class="comment"># Crea tablas automáticamente</span></div>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">5</div>
+          <div class="step-content">
+            <div class="step-title">Iniciar el sistema</div>
+            <div class="code"><span class="cmd">npm start</span>
+<span class="comment"># Abrir en el navegador: http://localhost:3000</span></div>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">6</div>
+          <div class="step-content">
+            <div class="step-title">💡 Para que arranque automáticamente con Windows</div>
+            <div class="step-desc">Instalar PM2 para que el servidor inicie con la PC:</div>
+            <div class="code"><span class="cmd">npm install -g pm2 pm2-windows-startup</span>
+<span class="cmd">pm2 start server.js --name "santuario"</span>
+<span class="cmd">pm2 save</span>
+<span class="cmd">pm2-startup install</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PASOS: RAILWAY -->
+  <div class="steps-section">
+    <div class="section-title">🚀 Opción B — Railway en la nube (recomendado)</div>
+    <div class="steps-grid">
+
+      <div class="step-card">
+        <div class="step-header">📋 Parte 1: Preparar el código en GitHub</div>
+        <div class="step-body">
+          <div class="step">
+            <div class="step-num">1</div>
+            <div class="step-content">
+              <div class="step-title">Crear cuenta en GitHub</div>
+              <div class="step-desc">Ir a <strong>github.com</strong> → Sign up (gratis). Crear un nuevo repositorio llamado <code>santuario-sistema</code></div>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">2</div>
+            <div class="step-content">
+              <div class="step-title">Subir el código del backend</div>
+              <div class="step-desc">Desde la carpeta <code>backend/</code> del proyecto:</div>
+              <div class="code"><span class="cmd">git init</span>
+<span class="cmd">git add .</span>
+<span class="cmd">git commit -m "Sistema Santuario v2"</span>
+<span class="cmd">git remote add origin https://github.com/TU_USUARIO/santuario-sistema.git</span>
+<span class="cmd">git push -u origin main</span></div>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">3</div>
+            <div class="step-content">
+              <div class="step-title">⚠️ Crear archivo .gitignore</div>
+              <div class="step-desc">Asegurarse de NO subir el archivo .env ni la carpeta uploads:</div>
+              <div class="code">.env
+node_modules/
+uploads/</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="step-card">
+        <div class="step-header">🚂 Parte 2: Desplegar en Railway</div>
+        <div class="step-body">
+          <div class="step">
+            <div class="step-num">1</div>
+            <div class="step-content">
+              <div class="step-title">Crear cuenta en Railway</div>
+              <div class="step-desc">Ir a <strong>railway.app</strong> → Login with GitHub. Plan Hobby: $5 USD/mes (≈ S/ 19). Incluye $5 de crédito de uso — suficiente para este sistema.</div>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">2</div>
+            <div class="step-content">
+              <div class="step-title">Crear nuevo proyecto</div>
+              <div class="step-desc"><strong>New Project → Deploy from GitHub repo</strong> → seleccionar <code>santuario-sistema</code></div>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">3</div>
+            <div class="step-content">
+              <div class="step-title">Agregar PostgreSQL</div>
+              <div class="step-desc">En el panel del proyecto: <strong>+ New → Database → PostgreSQL</strong>. Railway lo crea automáticamente y conecta las variables.</div>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">4</div>
+            <div class="step-content">
+              <div class="step-title">Configurar variables de entorno</div>
+              <div class="step-desc">En el servicio Node.js → <strong>Variables</strong> → agregar:</div>
+              <div class="code">JWT_SECRET = clave_secreta_larga_aleatoria
+RENIEC_TOKEN = su_token_apisperu
+NODE_ENV = production
+<span class="comment"># Las variables DB_* las agrega Railway automáticamente</span></div>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">5</div>
+            <div class="step-content">
+              <div class="step-title">Ejecutar el setup de base de datos</div>
+              <div class="step-desc">En Railway → su servicio → <strong>Settings → Deploy → Start Command</strong>:</div>
+              <div class="code">node db/setup.js && node server.js</div>
+              <div class="step-desc" style="margin-top:8px">Esto crea las tablas la primera vez y luego inicia el servidor.</div>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">6</div>
+            <div class="step-content">
+              <div class="step-title">🎉 ¡Listo! Obtener la URL pública</div>
+              <div class="step-desc">Railway asigna una URL como: <code>santuario-sistema.up.railway.app</code><br/>Puede acceder desde cualquier celular o PC.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- TABLA DE COSTOS -->
+  <div class="costs-section">
+    <div class="section-title">💰 Comparativa de costos mensuales</div>
+    <div class="step-card">
+      <div class="step-body" style="padding:0">
+        <table class="cost-table">
+          <thead>
+            <tr><th>Escenario</th><th>Costo/mes</th><th>Acceso</th><th>Ideal para</th><th>Recomendación</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>🖥️ Local (1 PC)</td>
+              <td><span class="tag-green">S/ 0</span></td>
+              <td>Solo esa PC</td>
+              <td>1 usuario, sin internet</td>
+              <td>Opción mínima</td>
+            </tr>
+            <tr>
+              <td>🚀 Railway Hobby</td>
+              <td><span class="tag-amber">~$5 USD ≈ S/ 19</span></td>
+              <td>Internet, global</td>
+              <td>Santuario con varios usuarios</td>
+              <td><strong>⭐ Recomendado</strong></td>
+            </tr>
+            <tr>
+              <td>☁️ VPS propio (DigitalOcean)</td>
+              <td><span class="tag-amber">$6 USD ≈ S/ 23</span></td>
+              <td>Internet, global</td>
+              <td>Control total + escalabilidad</td>
+              <td>Opción avanzada</td>
+            </tr>
+            <tr>
+              <td>🏢 Servidor dedicado</td>
+              <td><span class="tag-red">$50+ USD</span></td>
+              <td>Internet, global</td>
+              <td>Diócesis completa</td>
+              <td>Excesivo para una parroquia</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- RECOMENDACIÓN FINAL -->
+  <div class="final-rec">
+    <h3>🎯 Recomendación según su situación</h3>
+    <div class="scenario">
+      <div class="sc-icon">⚡</div>
+      <div>
+        <div class="sc-title">Quiero empezar ya mismo, sin complicaciones</div>
+        <div class="sc-desc">Instalar todo local en Windows. En 20 minutos el sistema está corriendo. Perfecto para probar antes de ir a producción.</div>
+        <span class="sc-rec">→ Opción Local</span>
+      </div>
+    </div>
+    <div class="scenario">
+      <div class="sc-icon">🏛️</div>
+      <div>
+        <div class="sc-title">El santuario tiene párroco, secretaria y varios colaboradores</div>
+        <div class="sc-desc">Lo ideal es Railway: cada persona accede con su usuario desde su celular. No depende de que una PC esté encendida. El costo es menor al de una copia de llave mensual.</div>
+        <span class="sc-rec">→ Opción Railway ⭐</span>
+      </div>
+    </div>
+    <div class="scenario">
+      <div class="sc-icon">🔌</div>
+      <div>
+        <div class="sc-title">Huarmey tiene cortes de internet frecuentes</div>
+        <div class="sc-desc">La mejor solución es un servidor local (Local + PM2) con backups automáticos hacia la nube. El sistema funciona sin internet pero los datos se respaldan cuando hay conexión.</div>
+        <span class="sc-rec">→ Combinación: Local + Backup en nube</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- OBTENER TOKEN RENIEC -->
+  <div class="step-card" style="margin-bottom:40px">
+    <div class="step-header">🔍 Obtener Token RENIEC (APIsPerú) — Gratis</div>
+    <div class="step-body">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-content">
+          <div class="step-title">Registrarse en APIsPerú</div>
+          <div class="step-desc">Ir a <strong>apisperu.com</strong> → Registrarse con email (es gratis). Plan gratuito incluye 100 consultas de DNI por mes — suficiente para un santuario.</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-content">
+          <div class="step-title">Copiar el Bearer Token</div>
+          <div class="step-desc">En el panel de APIsPerú → sección "Token" → copiar el token generado.</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-content">
+          <div class="step-title">Pegarlo en el archivo .env</div>
+          <div class="code">RENIEC_TOKEN=eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9...<span class="comment">  (su token aquí)</span>
+RENIEC_API_URL=https://api.apisperu.com/api/dni</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="text-align:center;padding:24px;color:rgba(232,224,212,.3);font-size:12px;border-top:1px solid rgba(255,255,255,.06)">
+    Sistema Parroquial · Santuario Mariano Nuestra Señora del Rosario · Huarmey, Áncash, Perú
+  </div>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Sistema Parroquial — Nuestra Señora del Rosario</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,400&family=DM+Sans:wght@300;400;500;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="css/style.css"/>
+  <style>
+    /* Spinner */
+    .spinner { width:36px; height:36px; border:3px solid var(--border); border-top-color:var(--gold2); border-radius:50%; animation:spin .7s linear infinite; }
+    @keyframes spin { to { transform:rotate(360deg); } }
+
+    /* Search-select (padrinos) */
+    .search-select-wrap { position:relative; }
+    .search-dropdown {
+      position:absolute; top:100%; left:0; right:0; z-index:200;
+      background:#fff; border:1.5px solid var(--gold2); border-top:none;
+      border-radius:0 0 var(--r) var(--r); box-shadow:var(--shadow-md);
+      max-height:200px; overflow-y:auto;
+    }
+    .search-dropdown-item { padding:10px 14px; cursor:pointer; font-size:13px; border-bottom:1px solid var(--border2); }
+    .search-dropdown-item:hover { background:var(--gold-bg); }
+    .search-dropdown-item:last-child { border-bottom:none; }
+
+    /* Layout fix para main-content con topbar sticky */
+    .main-content { display:flex; flex-direction:column; }
+    #topbarContainer { flex-shrink:0; }
+    #mainContent { flex:1; overflow-y:auto; }
+
+    /* MT-1 helper */
+    .mt-1 { margin-top:8px; }
+  </style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="loginScreen" class="login-screen" style="display:none">
+  <div class="login-bg"></div>
+  <div class="login-card">
+    <div class="login-cross">✝</div>
+    <h1 class="login-title">Sistema Parroquial</h1>
+    <p class="login-sub">Nuestra Señora del Rosario · Huarmey, Áncash, Perú</p>
+    <div class="login-form">
+      <div class="form-group">
+        <label>Usuario</label>
+        <input type="text" id="loginUser" placeholder="Ingrese su usuario" autocomplete="username"/>
+      </div>
+      <div class="form-group">
+        <label>Contraseña</label>
+        <input type="password" id="loginPass" placeholder="••••••••" autocomplete="current-password"/>
+      </div>
+      <div id="loginError" class="login-error" style="display:none">Credenciales incorrectas</div>
+      <button class="btn btn-primary btn-full" id="loginBtn" onclick="App.login()">Ingresar al Sistema</button>
+    </div>
+    <div class="login-roles">
+      <strong>Roles:</strong> párroco (admin) · secretaria (edición) · consulta (lectura)
+    </div>
+  </div>
+</div>
+
+<!-- APP SHELL -->
+<div id="appShell" style="display:none" class="app-shell">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-cross">✝</div>
+      <div class="brand-text">
+        <div class="brand-name">Nuestra Señora del Rosario</div>
+        <div class="brand-sub">Huarmey, Áncash · Sistema Parroquial</div>
+      </div>
+    </div>
+    <nav class="sidebar-nav">
+      <a class="nav-link active" data-view="dashboard" onclick="App.navigate('dashboard')"><span class="nav-ic">🏛️</span><span class="nav-lb">Panel Principal</span></a>
+      <div class="nav-section">FELIGRESES</div>
+      <a class="nav-link" data-view="feligreses" onclick="App.navigate('feligreses')"><span class="nav-ic">👥</span><span class="nav-lb">Directorio</span></a>
+      <a class="nav-link" data-view="nuevo-feligres" onclick="App.navigate('nuevo-feligres')" id="navNuevoFeligres"><span class="nav-ic">➕</span><span class="nav-lb">Nuevo Feligrés</span></a>
+      <div class="nav-section">SACRAMENTOS</div>
+      <a class="nav-link" data-view="sacramentos" onclick="App.navigate('sacramentos')"><span class="nav-ic">✝️</span><span class="nav-lb">Registro General</span></a>
+      <a class="nav-link" data-view="constancias" onclick="App.navigate('constancias')" id="navConstancias"><span class="nav-ic">📜</span><span class="nav-lb">Emitir Constancia</span></a>
+      <div class="nav-section">REPOSITORIO</div>
+      <a class="nav-link" data-view="documentos" onclick="App.navigate('documentos')"><span class="nav-ic">📁</span><span class="nav-lb">Documentos</span></a>
+      <div class="nav-section">GESTIÓN</div>
+      <a class="nav-link" data-view="agenda" onclick="App.navigate('agenda')"><span class="nav-ic">📅</span><span class="nav-lb">Agenda Litúrgica</span></a>
+      <a class="nav-link" data-view="reportes" onclick="App.navigate('reportes')"><span class="nav-ic">📊</span><span class="nav-lb">Reportes</span></a>
+      <a class="nav-link" data-view="config" onclick="App.navigate('config')" id="navConfig"><span class="nav-ic">⚙️</span><span class="nav-lb">Configuración</span></a>
+    </nav>
+    <div class="sidebar-user">
+      <div class="su-avatar" id="suAvatar">P</div>
+      <div class="su-info">
+        <div class="su-name" id="suName">Cargando...</div>
+        <div class="su-role" id="suRole"></div>
+      </div>
+      <button class="su-logout" onclick="App.logout()" title="Cerrar sesión">⏻</button>
+    </div>
+  </aside>
+
+  <!-- CONTENT -->
+  <main class="main-content">
+    <div id="topbarContainer"></div>
+    <div id="mainContent"></div>
+  </main>
+
+</div>
+
+<!-- TOAST -->
+<div id="toast" class="toast"></div>
+
+<!-- MODAL -->
+<div id="modalOverlay" class="modal-overlay" style="display:none" onclick="if(event.target===this)Modal.close()">
+  <div class="modal-box" id="modalBox"></div>
+</div>
+
+<script src="js/api.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/views.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
