@@ -3,7 +3,7 @@
    ============================================ */
 
 const API = (() => {
-  const BASE = window.location.origin + '/api';
+  const BASE = 'https://santuario-mariano-sistema.onrender.com';
 
   function getToken() {
     return localStorage.getItem('pq_token');
