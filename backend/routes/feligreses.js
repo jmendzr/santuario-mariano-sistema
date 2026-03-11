@@ -74,7 +74,7 @@ router.get('/:id', authMiddleware, async (req, res) => {
           'id', d.id, 'nombre_original', d.nombre_original, 'nombre_archivo', d.nombre_archivo,
           'tipo_mime', d.tipo_mime, 'tamanio_bytes', d.tamanio_bytes,
           'categoria', d.categoria, 'sacramento_id', d.sacramento_id, 'subido_en', d.subido_en
-        )) FROM documentos d WHERE d.feligres_id = f.id ORDER BY d.subido_en DESC) AS documentos
+        )) FROM documentos d WHERE d.feligres_id = f.id) AS documentos
       FROM feligreses f WHERE f.id = $1
     `, [req.params.id]);
 
