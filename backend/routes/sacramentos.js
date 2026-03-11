@@ -1,31 +1,26 @@
-// routes/sacramentos.js — Sacramentos + Documentos + Agenda + Config + Reportes
+// routes/sacramentos.js — Sacramentos + Documentos (Supabase Storage) + Agenda + Config + Reportes
 const express = require('express');
 const router  = express.Router();
 const multer  = require('multer');
 const path    = require('path');
-const fs      = require('fs');
 const { v4: uuidv4 } = require('uuid');
 const db      = require('../db');
 const { authMiddleware, requireEdit, requireParroco, audit } = require('../middleware/auth');
 
-// ── MULTER CONFIG ─────────────────────────────────────────────
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const dir = path.join(__dirname, '..', process.env.UPLOAD_DIR || 'uploads');
-    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-    cb(null, dir);
-  },
-  filename: (req, file, cb) => {
-    const ext  = path.extname(file.originalname).toLowerCase();
-    const name = `${uuidv4()}${ext}`;
-    cb(null, name);
-  }
-});
+// ── SUPABASE CLIENT ───────────────────────────────────────────
+const { createClient } = require('@supabase/supabase-js');
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_KEY
+);
+const BUCKET = process.env.SUPABASE_BUCKET || 'documentos';
+
+// ── MULTER CONFIG (memoria, no disco) ────────────────────────
 const upload = multer({
-  storage,
+  storage: multer.memoryStorage(),
   limits: { fileSize: parseInt(process.env.MAX_FILE_SIZE_MB || '10') * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
-    const allowed = ['.pdf','.jpg','.jpeg','.png','.doc','.docx'];
+    const allowed = ['.pdf', '.jpg', '.jpeg', '.png', '.doc', '.docx'];
     if (allowed.includes(path.extname(file.originalname).toLowerCase())) cb(null, true);
     else cb(new Error('Tipo de archivo no permitido. Use PDF, JPG, PNG o DOC.'));
   }
@@ -35,7 +30,6 @@ const upload = multer({
 // SACRAMENTOS
 // ════════════════════════════════════════════════
 
-// GET /api/sacramentos?tipo=bautismo
 router.get('/', authMiddleware, async (req, res) => {
   const { tipo } = req.query;
   try {
@@ -56,15 +50,14 @@ router.get('/', authMiddleware, async (req, res) => {
     const params = [];
     if (tipo) { sql += ` AND s.tipo = $1`; params.push(tipo); }
     sql += ` ORDER BY s.fecha DESC`;
-
     const r = await db.query(sql, params);
     res.json(r.rows);
   } catch (err) {
+    console.error(err);
     res.status(500).json({ error: 'Error al obtener sacramentos' });
   }
 });
 
-// POST /api/sacramentos — Crear o actualizar
 router.post('/', authMiddleware, requireEdit, async (req, res) => {
   const { feligres_id, tipo, fecha, parroquia, libro, folio, partida,
           padrino_id, madrina_id, conyuge_id, notas } = req.body;
@@ -100,18 +93,16 @@ router.post('/', authMiddleware, requireEdit, async (req, res) => {
   }
 });
 
-// DELETE /api/sacramentos/:id
 router.delete('/:id', authMiddleware, requireEdit, async (req, res) => {
   try {
-    // Eliminar documentos físicos asociados
     const docs = await db.query(`SELECT nombre_archivo FROM documentos WHERE sacramento_id = $1`, [req.params.id]);
     for (const d of docs.rows) {
-      const fp = path.join(__dirname, '..', process.env.UPLOAD_DIR || 'uploads', d.nombre_archivo);
-      if (fs.existsSync(fp)) fs.unlinkSync(fp);
+      await supabase.storage.from(BUCKET).remove([d.nombre_archivo]);
     }
     await db.query(`DELETE FROM sacramentos WHERE id = $1`, [req.params.id]);
     res.json({ message: 'Sacramento eliminado' });
   } catch (err) {
+    console.error(err);
     res.status(500).json({ error: 'Error al eliminar sacramento' });
   }
 });
@@ -120,7 +111,6 @@ router.delete('/:id', authMiddleware, requireEdit, async (req, res) => {
 // DOCUMENTOS
 // ════════════════════════════════════════════════
 
-// GET /api/documentos — Todos los documentos (repositorio)
 router.get('/documentos', authMiddleware, async (req, res) => {
   try {
     const r = await db.query(`
@@ -132,11 +122,12 @@ router.get('/documentos', authMiddleware, async (req, res) => {
     `);
     res.json(r.rows);
   } catch (err) {
+    console.error(err);
     res.status(500).json({ error: 'Error al obtener documentos' });
   }
 });
 
-// POST /api/documentos/upload — Subir archivo
+// POST /api/documentos/upload — Subir a Supabase Storage
 router.post('/documentos/upload', authMiddleware, requireEdit, upload.single('archivo'), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'No se recibió ningún archivo' });
 
@@ -144,47 +135,80 @@ router.post('/documentos/upload', authMiddleware, requireEdit, upload.single('ar
   if (!feligres_id) return res.status(400).json({ error: 'feligres_id es requerido' });
 
   try {
+    const ext           = path.extname(req.file.originalname).toLowerCase();
+    const nombreArchivo = `${uuidv4()}${ext}`;
+
+    // Subir buffer a Supabase Storage
+    const { error: uploadError } = await supabase.storage
+      .from(BUCKET)
+      .upload(nombreArchivo, req.file.buffer, {
+        contentType: req.file.mimetype,
+        upsert: false,
+      });
+
+    if (uploadError) {
+      console.error('Supabase Storage error:', uploadError);
+      return res.status(500).json({ error: 'Error al subir archivo al almacenamiento' });
+    }
+
+    // URL pública permanente
+    const { data: urlData } = supabase.storage
+      .from(BUCKET)
+      .getPublicUrl(nombreArchivo);
+
     const r = await db.query(`
       INSERT INTO documentos
         (feligres_id, sacramento_id, nombre_archivo, nombre_original,
          tipo_mime, tamanio_bytes, categoria, descripcion, ruta_almacen, subido_por)
       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
       RETURNING *
-    `, [feligres_id, sacramento_id || null, req.file.filename, req.file.originalname,
+    `, [feligres_id, sacramento_id || null, nombreArchivo, req.file.originalname,
         req.file.mimetype, req.file.size, categoria || 'General',
-        descripcion, req.file.path, req.user.id]);
+        descripcion, urlData.publicUrl, req.user.id]);
 
     await audit(db, req.user.id, 'SUBIR_DOC', 'documentos', r.rows[0].id,
       { feligres_id, archivo: req.file.originalname }, req.ip);
 
-    res.status(201).json(r.rows[0]);
+    res.status(201).json({ ...r.rows[0], url_publica: urlData.publicUrl });
+
   } catch (err) {
-    // Limpiar archivo si falla BD
-    if (req.file) fs.unlinkSync(req.file.path);
+    console.error('Error upload:', err);
     res.status(500).json({ error: 'Error al guardar documento' });
   }
 });
 
-// GET /api/documentos/file/:filename — Descargar archivo
-router.get('/documentos/file/:filename', authMiddleware, (req, res) => {
-  const filename = path.basename(req.params.filename); // Sanitize
-  const filepath = path.join(__dirname, '..', process.env.UPLOAD_DIR || 'uploads', filename);
-  if (!fs.existsSync(filepath)) return res.status(404).json({ error: 'Archivo no encontrado' });
-  res.download(filepath);
+// GET /api/documentos/file/:filename — Redirige a Supabase Storage
+router.get('/documentos/file/:filename', authMiddleware, async (req, res) => {
+  try {
+    const filename = req.params.filename;
+    const r = await db.query(
+      `SELECT ruta_almacen FROM documentos WHERE nombre_archivo = $1`, [filename]
+    );
+    if (!r.rows[0]) return res.status(404).json({ error: 'Archivo no encontrado' });
+
+    // Redirigir a la URL pública de Supabase (permite vista previa en el navegador)
+    if (r.rows[0].ruta_almacen && r.rows[0].ruta_almacen.startsWith('http')) {
+      return res.redirect(r.rows[0].ruta_almacen);
+    }
+
+    const { data } = supabase.storage.from(BUCKET).getPublicUrl(filename);
+    res.redirect(data.publicUrl);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Error al obtener archivo' });
+  }
 });
 
-// DELETE /api/documentos/:id
 router.delete('/documentos/:id', authMiddleware, requireEdit, async (req, res) => {
   try {
     const r = await db.query(`SELECT nombre_archivo FROM documentos WHERE id = $1`, [req.params.id]);
     if (!r.rows[0]) return res.status(404).json({ error: 'Documento no encontrado' });
 
-    const fp = path.join(__dirname, '..', process.env.UPLOAD_DIR || 'uploads', r.rows[0].nombre_archivo);
-    if (fs.existsSync(fp)) fs.unlinkSync(fp);
-
+    await supabase.storage.from(BUCKET).remove([r.rows[0].nombre_archivo]);
     await db.query(`DELETE FROM documentos WHERE id = $1`, [req.params.id]);
     res.json({ message: 'Documento eliminado' });
   } catch (err) {
+    console.error(err);
     res.status(500).json({ error: 'Error al eliminar documento' });
   }
 });
@@ -286,13 +310,12 @@ router.get('/reportes', authMiddleware, async (req, res) => {
       db.query(`SELECT estado_civil, COUNT(*) AS total FROM feligreses WHERE activo=true GROUP BY estado_civil ORDER BY total DESC`),
       db.query(`SELECT nombres, apellidos, dni, creado_en FROM feligreses ORDER BY creado_en DESC LIMIT 5`),
     ]);
-
     res.json({
-      totales:   totales.rows[0],
+      totales:       totales.rows[0],
       porSacramento: porSac.rows,
-      porSexo:   porSexo.rows,
-      porEstado: porEstado.rows,
-      recientes: recientes.rows,
+      porSexo:       porSexo.rows,
+      porEstado:     porEstado.rows,
+      recientes:     recientes.rows,
     });
   } catch (err) {
     console.error(err);
